@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2563eb">
+  <title>Meus Pets — Acompanhamento</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MEUS PETS</p>
+        <h1>🐾 Acompanhamento dos Pets</h1>
+        <p class="subtitle">Cadastre seus animais e mantenha o histórico de saúde organizado.</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-secondary" id="exportBtn">⬇ Exportar</button>
+        <label class="btn btn-secondary file-btn">⬆ Importar
+          <input type="file" id="importInput" accept=".json" hidden>
+        </label>
+        <button class="btn btn-primary" id="newPetBtn">＋ Novo pet</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="stats">
+        <div class="stat-card"><span>🐾</span><div><strong id="totalPets">0</strong><small>Pets cadastrados</small></div></div>
+        <div class="stat-card"><span>🩺</span><div><strong id="totalRecords">0</strong><small>Registros de saúde</small></div></div>
+        <div class="stat-card"><span>📅</span><div><strong id="nextAppointment">—</strong><small>Próxima consulta</small></div></div>
+        <div class="stat-card"><span>⚠️</span><div><strong id="attentionPets">0</strong><small>Em observação/tratamento</small></div></div>
+      </section>
+
+      <section class="toolbar">
+        <div class="search-wrap">
+          <span>🔎</span>
+          <input id="searchInput" type="search" placeholder="Buscar pet por nome...">
+        </div>
+        <select id="statusFilter">
+          <option value="todos">Todos os status</option>
+          <option value="Saudável">Saudável</option>
+          <option value="Em observação">Em observação</option>
+          <option value="Em tratamento">Em tratamento</option>
+        </select>
+      </section>
+
+      <section id="petsGrid" class="pets-grid"></section>
+
+      <section id="emptyState" class="empty-state hidden">
+        <div>🐾</div>
+        <h2>Nenhum pet cadastrado</h2>
+        <p>Comece adicionando seu primeiro animal.</p>
+        <button class="btn btn-primary" id="emptyNewPet">＋ Cadastrar primeiro pet</button>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal: cadastro/edição -->
+  <div class="modal-backdrop hidden" id="petModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div><p class="eyebrow">CADASTRO</p><h2 id="petModalTitle">Novo pet</h2></div>
+        <button class="icon-btn" data-close="petModal">×</button>
+      </div>
+      <form id="petForm">
+        <input type="hidden" id="petId">
+        <div class="form-grid">
+          <label>Nome*
+            <input id="petName" required maxlength="60" placeholder="Ex.: Mel">
+          </label>
+          <label>Espécie*
+            <select id="petSpecies" required>
+              <option value="">Selecione</option>
+              <option>Gato</option>
+              <option>Cachorro</option>
+              <option>Pássaro</option>
+              <option>Coelho</option>
+              <option>Outro</option>
+            </select>
+          </label>
+          <label>Sexo
+            <select id="petSex">
+              <option value="">Não informado</option>
+              <option>Fêmea</option>
+              <option>Macho</option>
+            </select>
+          </label>
+          <label>Data de nascimento*
+            <input id="petBirth" type="date" required>
+          </label>
+          <label>Status
+            <select id="petStatus">
+              <option>Saudável</option>
+              <option>Em observação</option>
+              <option>Em tratamento</option>
+            </select>
+          </label>
+          <label class="full">Foto (URL opcional)
+            <input id="petPhoto" type="url" placeholder="https://...">
+          </label>
+          <label class="full">Observações gerais
+            <textarea id="petNotes" rows="4" placeholder="Características, alergias, histórico anterior, observações..."></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close="petModal">Cancelar</button>
+          <button class="btn btn-primary" type="submit">Salvar pet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: prontuário -->
+  <div class="modal-backdrop hidden" id="recordModal">
+    <div class="modal modal-large">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">PRONTUÁRIO</p>
+          <h2 id="recordPetName">Pet</h2>
+          <p id="recordPetMeta" class="muted"></p>
+        </div>
+        <button class="icon-btn" data-close="recordModal">×</button>
+      </div>
+
+      <div id="petOverview" class="pet-overview"></div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="health">🩺 Saúde</button>
+        <button class="tab" data-tab="appointments">📅 Consultas</button>
+      </div>
+
+      <div id="healthTab" class="tab-content">
+        <div class="section-heading">
+          <div><h3>Histórico de saúde</h3><p>Registre problemas, sintomas e tratamentos.</p></div>
+          <button class="btn btn-primary" id="addHealthBtn">＋ Ocorrência</button>
+        </div>
+        <div id="healthList" class="timeline"></div>
+      </div>
+
+      <div id="appointmentsTab" class="tab-content hidden">
+        <div class="section-heading">
+          <div><h3>Consultas e próximos compromissos</h3><p>Registre consultas realizadas ou agendadas.</p></div>
+          <button class="btn btn-primary" id="addAppointmentBtn">＋ Consulta</button>
+        </div>
+        <div id="appointmentsList" class="timeline"></div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-danger-outline" id="deletePetBtn">Excluir pet</button>
+        <button class="btn btn-secondary" data-close="recordModal">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: registro -->
+  <div class="modal-backdrop hidden" id="entryModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div><p class="eyebrow" id="entryEyebrow">REGISTRO</p><h2 id="entryTitle">Novo registro</h2></div>
+        <button class="icon-btn" data-close="entryModal">×</button>
+      </div>
+      <form id="entryForm">
+        <input type="hidden" id="entryType">
+        <input type="hidden" id="entryId">
+        <div class="form-grid">
+          <label>Data*
+            <input id="entryDate" type="date" required>
+          </label>
+          <label id="entryPlaceLabel">Veterinário / clínica
+            <input id="entryPlace" maxlength="100" placeholder="Opcional">
+          </label>
+          <label class="full" id="problemLabel">Problema / diagnóstico*
+            <input id="entryProblem" maxlength="150" placeholder="Ex.: secreção nos olhos" required>
+          </label>
+          <label class="full">Tratamento / conduta
+            <textarea id="entryTreatment" rows="3" placeholder="Medicamentos, recomendações, cuidados..."></textarea>
+          </label>
+          <label class="full">Observações
+            <textarea id="entryNotes" rows="3" placeholder="Detalhes importantes..."></textarea>
+          </label>
+          <label id="nextDateLabel" class="full">Próxima data (opcional)
+            <input id="entryNextDate" type="date">
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close="entryModal">Cancelar</button>
+          <button class="btn btn-primary" type="submit">Salvar registro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="script.js"></script>
+</body>
+</html>
